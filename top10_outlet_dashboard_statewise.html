@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Top 10 Outlet Contribution — Statewise</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#12212b;
+    --paper:#eef2f1;
+    --card:#ffffff;
+    --line:#d7ded9;
+    --accent:#1f6f5c;
+    --accent2:#c96a3f;
+    --muted:#5a6b68;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 28px 80px;}
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:18px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  h1{
+    font-size:28px;
+    margin:0;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:6px 0 0;
+    color:var(--muted);
+    font-size:14px;
+    max-width:560px;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+  }
+  .meta{
+    text-align:right;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.6;
+  }
+  .stagebar{
+    display:flex;
+    gap:6px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+  }
+  .stagebar button{
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--ink);
+    padding:9px 14px;
+    font-size:13px;
+    cursor:pointer;
+    border-radius:3px;
+    transition: all .15s ease;
+  }
+  .stagebar button:hover{ border-color: var(--accent); }
+  .stagebar button.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:#fff;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap:22px;
+    margin-bottom:22px;
+  }
+  @media(max-width:860px){ .grid{grid-template-columns:1fr;} }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px 24px;
+  }
+  .card h2{
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:12.5px;
+    letter-spacing:0.01em;
+    margin:0 0 4px;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .card .stagelabel{
+    font-size:22px;
+    font-weight:600;
+    margin-bottom:16px;
+  }
+  .stat-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-top:1px solid var(--line);
+    padding:11px 0;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+  }
+  .stat-row:first-of-type{border-top:none;}
+  .stat-row .label{font-size:13.5px;color:var(--muted);}
+  .stat-row .value{font-size:15px;font-weight:600;font-variant-numeric: tabular-nums;}
+  .badge{
+    display:inline-block;
+    width:9px;height:9px;
+    border-radius:50%;
+    margin-right:8px;
+  }
+  .b-top{background:var(--accent2);}
+  .b-rest{background:var(--accent);}
+  .barwrap{
+    height:34px;
+    display:flex;
+    border-radius:4px;
+    overflow:hidden;
+    margin:14px 0 6px;
+    border:1px solid var(--line);
+  }
+  .bar-top{background:var(--accent2);}
+  .bar-rest{background:var(--accent);}
+  .barwrap div{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:12px;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+  }
+  .legend{
+    display:flex;
+    gap:18px;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:12px;
+    color:var(--muted);
+  }
+  canvas{max-height:280px;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:13px;
+  }
+  th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+    color:var(--muted);
+    font-weight:600;
+    padding:8px 10px;
+    border-bottom:1px solid var(--ink);
+  }
+  th.num, td.num{text-align:right;}
+  td{
+    padding:9px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  tr:last-child td{border-bottom:none;}
+  td.rank{color:var(--muted); font-variant-numeric: tabular-nums;}
+  td.name{font-weight:500;}
+  td.id{color:var(--muted);font-size:12px;font-variant-numeric: tabular-nums;}
+  .table-card{grid-column: span 2;}
+  @media(max-width:860px){ .table-card{grid-column:span 1;} }
+  .note{
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:12px;
+    color:var(--muted);
+    margin-top:10px;
+  }
+  footer{
+    margin-top:30px;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:12px;
+    color:var(--muted);
+    border-top:1px solid var(--line);
+    padding-top:16px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Top 10 Outlets vs. Rest — Statewise Contribution</h1>
+      <p>Sales contribution split by Outlet ID (unique), state by state, Apr–Aug secondary sales. Values shown in ₹ Lakh, or ₹ Cr where the value is 100 Lakh or more (1 Cr = 100 Lakh).</p>
+    </div>
+    <div class="meta">Source: Data_Dump · Outlet Id used as unique key</div>
+  </header>
+
+  <div class="stagebar" id="stagebar"></div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Selected state</h2>
+      <div class="stagelabel" id="stagelabel">—</div>
+
+      <div class="barwrap" id="barwrap"></div>
+      <div class="legend">
+        <span><span class="badge b-top"></span>Top 10 outlets</span>
+        <span><span class="badge b-rest"></span>Rest of outlets</span>
+      </div>
+
+      <div style="margin-top:18px;">
+        <div class="stat-row"><span class="label">Total active outlets</span><span class="value" id="s-total-outlets">—</span></div>
+        <div class="stat-row"><span class="label">Total sales</span><span class="value" id="s-total-sales">—</span></div>
+        <div class="stat-row"><span class="label"><span class="badge b-top"></span>Top 10 — sales / share</span><span class="value" id="s-top-sales">—</span></div>
+        <div class="stat-row"><span class="label"><span class="badge b-rest"></span>Rest — count of outlets</span><span class="value" id="s-rest-count">—</span></div>
+        <div class="stat-row"><span class="label"><span class="badge b-rest"></span>Rest — sales / share</span><span class="value" id="s-rest-sales">—</span></div>
+        <div class="stat-row"><span class="label">Avg. sales / outlet (Rest)</span><span class="value" id="s-rest-avg">—</span></div>
+      </div>
+      <div class="note" id="smallnote"></div>
+    </div>
+
+    <div class="card">
+      <h2>Concentration across states</h2>
+      <div class="stagelabel" style="font-size:15px;color:var(--muted);font-weight:500;">Top 10 outlets' share of state sales</div>
+      <canvas id="trendChart"></canvas>
+    </div>
+
+    <div class="card table-card">
+      <h2 style="margin-bottom:14px;">Top 10 outlets — <span id="tablestage">Tamil Nadu</span></h2>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Outlet</th><th>Outlet ID</th><th class="num">Sales</th><th class="num">Share of state</th></tr>
+        </thead>
+        <tbody id="top10table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>Dashboard generated from Secondary_Without_Data_Model_Version.xlsb — Data_Dump sheet (341,785 line items, 32,423 unique Outlet IDs, 11 states). All values are in ₹ Lakh unless marked Cr (100 Lakh = 1 Cr).</footer>
+</div>
+
+<script>
+const DATA = {"Tamil Nadu": {"total_sales": 518.298, "total_outlets": 14086, "n_top": 10, "top10": [{"id": 239866, "name": "murugan general store", "sales": 8.01, "pct": 1.55}, {"id": 596656, "name": "varadharajan trade point", "sales": 6.514, "pct": 1.26}, {"id": 58938, "name": "magalakshmi store", "sales": 4.392, "pct": 0.85}, {"id": 59195, "name": "sri paras traders", "sales": 3.748, "pct": 0.72}, {"id": 58960, "name": "Mukesh store", "sales": 3.259, "pct": 0.63}, {"id": 50745, "name": "suresh co", "sales": 3.175, "pct": 0.61}, {"id": 746270, "name": "V.R.STORE", "sales": 2.357, "pct": 0.45}, {"id": 50946, "name": "s.s.s.store", "sales": 2.277, "pct": 0.44}, {"id": 674213, "name": "Sri Lakshmi Stores -N (Old Mahalakshmi Store)", "sales": 2.187, "pct": 0.42}, {"id": 240061, "name": "sri ashapura traders", "sales": 2.056, "pct": 0.4}], "top10_sum": 37.974, "top10_pct": 7.33, "rest_sum": 480.324, "rest_pct": 92.67, "rest_count": 14076}, "Karnataka": {"total_sales": 272.443, "total_outlets": 9383, "n_top": 10, "top10": [{"id": 207089, "name": "JAYANT & CO", "sales": 6.948, "pct": 2.55}, {"id": 207960, "name": "Ramesh Distributer", "sales": 2.984, "pct": 1.1}, {"id": 1025149, "name": "Yash Marketing", "sales": 2.713, "pct": 1.0}, {"id": 307950, "name": "V.K ENTERPRISES", "sales": 1.773, "pct": 0.65}, {"id": 186198, "name": "PATEL NOVELITES_GANDHI BAZAR", "sales": 1.703, "pct": 0.63}, {"id": 308108, "name": "NAGESHWAR MARKETING", "sales": 1.697, "pct": 0.62}, {"id": 950168, "name": "Famous general store", "sales": 1.473, "pct": 0.54}, {"id": 209720, "name": "Adhinatha Treder", "sales": 1.243, "pct": 0.46}, {"id": 1025127, "name": "Balaji Enterprises", "sales": 1.185, "pct": 0.43}, {"id": 305912, "name": "SURESH READING CO.", "sales": 1.177, "pct": 0.43}], "top10_sum": 22.897, "top10_pct": 8.4, "rest_sum": 249.546, "rest_pct": 91.6, "rest_count": 9373}, "West Bengal": {"total_sales": 198.371, "total_outlets": 805, "n_top": 10, "top10": [{"id": 691674, "name": "Dilip store", "sales": 65.951, "pct": 33.25}, {"id": 105234, "name": "Drug house", "sales": 27.52, "pct": 13.87}, {"id": 691794, "name": "LG Store", "sales": 14.62, "pct": 7.37}, {"id": 691697, "name": "kedia & co", "sales": 10.821, "pct": 5.45}, {"id": 990512, "name": "K.D.Enterprise", "sales": 6.511, "pct": 3.28}, {"id": 105227, "name": "Ambey st", "sales": 6.356, "pct": 3.2}, {"id": 691713, "name": "RC samanto", "sales": 2.608, "pct": 1.31}, {"id": 96758, "name": "HANUMAN BHANDER", "sales": 2.434, "pct": 1.23}, {"id": 103287, "name": "Friends medical", "sales": 2.354, "pct": 1.19}, {"id": 89692, "name": "Sanjeevani Medical Store", "sales": 2.266, "pct": 1.14}], "top10_sum": 141.441, "top10_pct": 71.3, "rest_sum": 56.93, "rest_pct": 28.7, "rest_count": 795}, "Telangana": {"total_sales": 97.044, "total_outlets": 4779, "n_top": 10, "top10": [{"id": 124277, "name": "mithraa medicals", "sales": 1.282, "pct": 1.32}, {"id": 127756, "name": "shruthi enterprises", "sales": 1.267, "pct": 1.31}, {"id": 127764, "name": "sri bajrang treders", "sales": 1.252, "pct": 1.29}, {"id": 124279, "name": "Sri Mallikarjuna medical and g", "sales": 1.219, "pct": 1.26}, {"id": 1091087, "name": "Sri Santosh traders", "sales": 1.209, "pct": 1.25}, {"id": 124264, "name": "Sri venkateshwara medical and", "sales": 1.12, "pct": 1.15}, {"id": 930970, "name": "Hanuman kirana", "sales": 1.101, "pct": 1.13}, {"id": 930967, "name": "Devi Grand Bazar", "sales": 1.1, "pct": 1.13}, {"id": 931024, "name": "Sri Balaji Harikrishna Kirana", "sales": 1.079, "pct": 1.11}, {"id": 1002509, "name": "mallikarjuna kirana and general Store", "sales": 1.069, "pct": 1.1}], "top10_sum": 11.697, "top10_pct": 12.05, "rest_sum": 85.347, "rest_pct": 87.95, "rest_count": 4769}, "Andhra Pradesh": {"total_sales": 54.025, "total_outlets": 3218, "n_top": 10, "top10": [{"id": 110574, "name": "Bhaskar ribbon stores", "sales": 4.45, "pct": 8.24}, {"id": 111226, "name": "agarwal consumt products", "sales": 3.434, "pct": 6.36}, {"id": 110590, "name": "s v sainadagenarel stores", "sales": 1.25, "pct": 2.31}, {"id": 662215, "name": "om nakoda marketing", "sales": 0.654, "pct": 1.21}, {"id": 142756, "name": "SkMl Traders", "sales": 0.432, "pct": 0.8}, {"id": 142753, "name": "sri venkateswara kirana genera", "sales": 0.415, "pct": 0.77}, {"id": 111383, "name": "Sirisha Kirana Fancy Generals", "sales": 0.405, "pct": 0.75}, {"id": 143184, "name": "sri ram traders", "sales": 0.388, "pct": 0.72}, {"id": 143185, "name": "sai mani kants gen store", "sales": 0.386, "pct": 0.72}, {"id": 110595, "name": "tirumala genaral sr", "sales": 0.385, "pct": 0.71}], "top10_sum": 12.199, "top10_pct": 22.58, "rest_sum": 41.826, "rest_pct": 77.42, "rest_count": 3208}, "Odisha": {"total_sales": 1.66, "total_outlets": 10, "n_top": 10, "top10": [{"id": 290431, "name": "Sai kirana store", "sales": 1.137, "pct": 68.5}, {"id": 950001, "name": "Narayani Med Store", "sales": 0.332, "pct": 20.02}, {"id": 283282, "name": "Metakani agencies", "sales": 0.068, "pct": 4.12}, {"id": 291152, "name": "Manoj medical store", "sales": 0.043, "pct": 2.58}, {"id": 496440, "name": "Aliance madical Store", "sales": 0.031, "pct": 1.87}, {"id": 496633, "name": "Puja Fancy store", "sales": 0.029, "pct": 1.73}, {"id": 282598, "name": "Annapurna bhandar", "sales": 0.009, "pct": 0.56}, {"id": 282595, "name": "Pradhan grossory", "sales": 0.005, "pct": 0.29}, {"id": 289176, "name": "Mahalaxmi Store", "sales": 0.004, "pct": 0.23}, {"id": 282594, "name": "Ambica medical store", "sales": 0.001, "pct": 0.09}], "top10_sum": 1.66, "top10_pct": 100.0, "rest_sum": 0.0, "rest_pct": 0.0, "rest_count": 0}, "Bihar": {"total_sales": 0.822, "total_outlets": 100, "n_top": 10, "top10": [{"id": 762564, "name": "Amit Enterprises", "sales": 0.029, "pct": 3.53}, {"id": 762717, "name": "prabhat Medical", "sales": 0.027, "pct": 3.29}, {"id": 218750, "name": "jai bihari medical", "sales": 0.016, "pct": 1.95}, {"id": 693951, "name": "Isfy med", "sales": 0.014, "pct": 1.75}, {"id": 993525, "name": "GOPI KRISHNA TELL MILL & DEPARTMENT STORE", "sales": 0.013, "pct": 1.63}, {"id": 1089761, "name": "Ashok pharma", "sales": 0.013, "pct": 1.6}, {"id": 762614, "name": "Sai Generik", "sales": 0.013, "pct": 1.59}, {"id": 596691, "name": "MAA LAXMI MEDICAL HAAL", "sales": 0.013, "pct": 1.54}, {"id": 555572, "name": "MEDICO pharma", "sales": 0.012, "pct": 1.5}, {"id": 1032600, "name": "mahima medical holl", "sales": 0.012, "pct": 1.42}], "top10_sum": 0.163, "top10_pct": 19.8, "rest_sum": 0.659, "rest_pct": 80.2, "rest_count": 90}, "Andaman And Nicobar Islands": {"total_sales": 0.412, "total_outlets": 13, "n_top": 10, "top10": [{"id": 57840, "name": "alaghu pharmacy 1", "sales": 0.107, "pct": 26.02}, {"id": 57842, "name": "Alaghu pharmacy2", "sales": 0.102, "pct": 24.7}, {"id": 58355, "name": "pasumai pharmacy marutham phar", "sales": 0.086, "pct": 20.77}, {"id": 692339, "name": "VINAYAKA PROVISION STORES", "sales": 0.019, "pct": 4.59}, {"id": 58022, "name": "Ganapathiram medical", "sales": 0.018, "pct": 4.27}, {"id": 699326, "name": "Nellai Abraham Store", "sales": 0.015, "pct": 3.66}, {"id": 58138, "name": "karuppar pharmacy", "sales": 0.015, "pct": 3.61}, {"id": 755810, "name": "MARUTHI TRADERS", "sales": 0.013, "pct": 3.08}, {"id": 58237, "name": "Matha medical", "sales": 0.011, "pct": 2.59}, {"id": 642646, "name": "SARASWATHI PROVISION STORE", "sales": 0.01, "pct": 2.43}], "top10_sum": 0.395, "top10_pct": 95.71, "rest_sum": 0.018, "rest_pct": 4.29, "rest_count": 3}, "Uttar Pradesh": {"total_sales": 0.103, "total_outlets": 24, "n_top": 10, "top10": [{"id": 602450, "name": "ANSARI janral store", "sales": 0.022, "pct": 21.43}, {"id": 786705, "name": "The Ma Vainshniw Medical Store", "sales": 0.011, "pct": 10.51}, {"id": 646355, "name": "ajay medical", "sales": 0.009, "pct": 8.48}, {"id": 646145, "name": "tara medical", "sales": 0.007, "pct": 6.7}, {"id": 646351, "name": "roshni medical", "sales": 0.006, "pct": 6.25}, {"id": 646462, "name": "pankaj medical", "sales": 0.005, "pct": 4.47}, {"id": 1105072, "name": "Mahadev Medical Store", "sales": 0.004, "pct": 4.02}, {"id": 1024103, "name": "sunny medical", "sales": 0.004, "pct": 3.99}, {"id": 985427, "name": "Rajiv Medical", "sales": 0.004, "pct": 3.73}, {"id": 1108370, "name": "The Anni Medical", "sales": 0.004, "pct": 3.73}], "top10_sum": 0.076, "top10_pct": 73.31, "rest_sum": 0.028, "rest_pct": 26.69, "rest_count": 14}, "Jharkhand": {"total_sales": 0.023, "total_outlets": 4, "n_top": 4, "top10": [{"id": 279188, "name": "Shital Store", "sales": 0.01, "pct": 41.01}, {"id": 279193, "name": "Sanjay Store", "sales": 0.007, "pct": 28.69}, {"id": 279190, "name": "Relation Point", "sales": 0.005, "pct": 22.45}, {"id": 279189, "name": "Suruchi Departmental Store", "sales": 0.002, "pct": 7.86}], "top10_sum": 0.023, "top10_pct": 100.0, "rest_sum": 0.0, "rest_pct": 0.0, "rest_count": 0}, "Chhattisgarh(Cg)": {"total_sales": 0.006, "total_outlets": 1, "n_top": 1, "top10": [{"id": 433860, "name": "Maloo Medical", "sales": 0.006, "pct": 100.0}], "top10_sum": 0.006, "top10_pct": 100.0, "rest_sum": 0.0, "rest_pct": 0.0, "rest_count": 0}, "All India": {"total_sales": 1143.207, "total_outlets": 32423, "n_top": 10, "top10": [{"id": 691674, "name": "Dilip store", "sales": 65.951, "pct": 5.77}, {"id": 105234, "name": "Drug house", "sales": 27.52, "pct": 2.41}, {"id": 691794, "name": "LG Store", "sales": 14.62, "pct": 1.28}, {"id": 691697, "name": "kedia & co", "sales": 10.821, "pct": 0.95}, {"id": 239866, "name": "murugan general store", "sales": 8.01, "pct": 0.7}, {"id": 207089, "name": "JAYANT & CO", "sales": 6.948, "pct": 0.61}, {"id": 596656, "name": "varadharajan trade point", "sales": 6.514, "pct": 0.57}, {"id": 990512, "name": "K.D.Enterprise", "sales": 6.511, "pct": 0.57}, {"id": 105227, "name": "Ambey st", "sales": 6.356, "pct": 0.56}, {"id": 110574, "name": "Bhaskar ribbon stores", "sales": 4.45, "pct": 0.39}], "top10_sum": 157.7, "top10_pct": 13.79, "rest_sum": 985.508, "rest_pct": 86.21, "rest_count": 32413}};
+
+const STATES = ["Tamil Nadu","Karnataka","West Bengal","Telangana","Andhra Pradesh","Odisha","Bihar","Andaman And Nicobar Islands","Uttar Pradesh","Jharkhand","Chhattisgarh(Cg)","All India"];
+
+// Values are stored in ₹ Lakh. Convert to Cr when >= 100 Lakh.
+function fmtVal(n){
+  if(Math.abs(n) >= 100){
+    return (n/100).toLocaleString('en-IN', {maximumFractionDigits:2}) + ' Cr';
+  }
+  return n.toLocaleString('en-IN', {maximumFractionDigits:2}) + ' L';
+}
+const fmtInt = n => n.toLocaleString('en-IN');
+
+let currentStage = "Tamil Nadu";
+let trendChart = null;
+
+function renderStageBar(){
+  const bar = document.getElementById('stagebar');
+  bar.innerHTML = '';
+  STATES.forEach(s=>{
+    const btn = document.createElement('button');
+    btn.textContent = s === 'All India' ? 'All India (Overall)' : s;
+    if(s === currentStage) btn.classList.add('active');
+    btn.onclick = () => { currentStage = s; render(); };
+    bar.appendChild(btn);
+  });
+}
+
+function renderStage(){
+  const d = DATA[currentStage];
+  document.getElementById('stagelabel').textContent = currentStage;
+
+  const barwrap = document.getElementById('barwrap');
+  barwrap.innerHTML = `
+    <div class="bar-top" style="width:${d.top10_pct}%">${d.top10_pct >= 6 ? d.top10_pct.toFixed(1)+'%' : ''}</div>
+    <div class="bar-rest" style="width:${d.rest_pct}%">${d.rest_pct >= 6 ? d.rest_pct.toFixed(1)+'%' : ''}</div>
+  `;
+
+  document.getElementById('s-total-outlets').textContent = fmtInt(d.total_outlets);
+  document.getElementById('s-total-sales').textContent = fmtVal(d.total_sales);
+  document.getElementById('s-top-sales').textContent = `${fmtVal(d.top10_sum)}  ·  ${d.top10_pct.toFixed(2)}%`;
+  document.getElementById('s-rest-count').textContent = fmtInt(d.rest_count);
+  document.getElementById('s-rest-sales').textContent = `${fmtVal(d.rest_sum)}  ·  ${d.rest_pct.toFixed(2)}%`;
+  document.getElementById('s-rest-avg').textContent = d.rest_count > 0 ? fmtVal(d.rest_sum / d.rest_count) : '—';
+
+  document.getElementById('smallnote').textContent = d.n_top < 10
+    ? `Note: ${currentStage} has only ${d.total_outlets} outlet(s) in total, so "Top 10" reflects all ${d.n_top} of them.`
+    : '';
+
+  document.getElementById('tablestage').textContent = currentStage;
+  const tbody = document.getElementById('top10table');
+  tbody.innerHTML = d.top10.map((o,i)=>`
+    <tr>
+      <td class="rank">${i+1}</td>
+      <td class="name">${o.name}</td>
+      <td class="id">${o.id}</td>
+      <td class="num">${fmtVal(o.sales)}</td>
+      <td class="num">${o.pct.toFixed(2)}%</td>
+    </tr>
+  `).join('');
+}
+
+function renderTrend(){
+  const ctx = document.getElementById('trendChart');
+  const labels = STATES.filter(s => s !== 'All India');
+  const topPct = labels.map(s => DATA[s].top10_pct);
+  const restPct = labels.map(s => DATA[s].rest_pct);
+
+  if(trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels.map(l => l.replace(' Islands','').replace('Andaman And Nicobar','A&N Isl.')),
+      datasets: [
+        { label: 'Top 10 outlets', data: topPct, backgroundColor: '#c96a3f', borderRadius: 3, stack:'s' },
+        { label: 'Rest of outlets', data: restPct, backgroundColor: '#1f6f5c', borderRadius: 3, stack:'s' },
+      ]
+    },
+    options: {
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{ callbacks:{ label: c => `${c.dataset.label}: ${c.raw.toFixed(1)}%` } }
+      },
+      scales:{
+        x:{ grid:{display:false}, ticks:{ font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:10}, maxRotation:45, minRotation:45 } },
+        y:{ max:100, ticks:{ callback:v=>v+'%', font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11} }, grid:{color:'#e3e8e6'} }
+      }
+    }
+  });
+}
+
+function render(){
+  renderStageBar();
+  renderStage();
+}
+
+render();
+renderTrend();
+</script>
+</body>
+</html>
