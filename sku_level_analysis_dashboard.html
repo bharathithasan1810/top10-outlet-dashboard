@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SKU-Level Analysis — Apr to Aug</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#12212b;
+    --paper:#eef2f1;
+    --card:#ffffff;
+    --line:#d7ded9;
+    --accent:#1f6f5c;
+    --accent2:#c96a3f;
+    --accent3:#8a6bb0;
+    --muted:#5a6b68;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family: 'Georgia','Iowan Old Style', serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1220px;margin:0 auto;padding:40px 28px 90px;}
+  header{
+    border-bottom:2px solid var(--ink);
+    padding-bottom:18px; margin-bottom:26px;
+  }
+  h1{ font-size:28px; margin:0 0 6px; font-weight:600; letter-spacing:-0.01em; }
+  header p{
+    margin:0; color:var(--muted); font-size:14px; max-width:760px;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+  }
+  .kpis{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:30px;
+  }
+  @media(max-width:860px){ .kpis{grid-template-columns:repeat(2,1fr);} }
+  .kpi{
+    background:var(--card); border:1px solid var(--line); border-radius:6px;
+    padding:16px 18px;
+  }
+  .kpi .num{ font-size:24px; font-weight:700; }
+  .kpi .lbl{
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:12px; color:var(--muted); margin-top:3px;
+  }
+
+  .navtabs{
+    display:flex; gap:6px; margin-bottom:22px; flex-wrap:wrap;
+    border-bottom:1px solid var(--line); padding-bottom:14px;
+  }
+  .navtabs button{
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    padding:9px 16px; font-size:13px; cursor:pointer; border-radius:20px;
+    transition: all .15s ease;
+  }
+  .navtabs button:hover{ border-color: var(--accent); }
+  .navtabs button.active{ background:var(--ink); border-color:var(--ink); color:#fff; }
+
+  section{ display:none; }
+  section.active{ display:block; }
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:6px;
+    padding:24px 26px; margin-bottom:22px;
+  }
+  .card h2{
+    font-size:18px; margin:0 0 4px; font-weight:600;
+  }
+  .card .sub{
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:13px; color:var(--muted); margin-bottom:18px;
+  }
+  canvas{ max-height:340px; }
+
+  .twocol{ display:grid; grid-template-columns:1.3fr 1fr; gap:22px; }
+  @media(max-width:900px){ .twocol{grid-template-columns:1fr;} }
+
+  table{
+    width:100%; border-collapse:collapse;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:12.5px;
+  }
+  th{
+    text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.03em;
+    color:var(--muted); font-weight:700; padding:8px 8px; border-bottom:1px solid var(--ink);
+    position:sticky; top:0; background:var(--card);
+  }
+  th.num, td.num{ text-align:right; }
+  td{ padding:7px 8px; border-bottom:1px solid var(--line); }
+  tr:last-child td{ border-bottom:none; }
+  tr:hover td{ background:#f5f8f7; }
+  td.rank{ color:var(--muted); }
+  td.name{ font-weight:600; }
+  .tablewrap{ max-height:560px; overflow-y:auto; border:1px solid var(--line); border-radius:6px; }
+  .tablewrap table{ }
+  .tablewrap thead th{ position:sticky; top:0; }
+
+  .searchbox{
+    margin-bottom:14px;
+  }
+  .searchbox input{
+    width:100%; padding:10px 14px; border:1px solid var(--line); border-radius:4px;
+    font-family: -apple-system, Helvetica, Arial, sans-serif; font-size:13px;
+    background:var(--card); color:var(--ink);
+  }
+
+  .barcell{
+    display:inline-block; height:8px; background:var(--accent); border-radius:2px; vertical-align:middle; margin-right:6px;
+  }
+
+  .selectorrow{
+    display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;
+    font-family: -apple-system, Helvetica, Arial, sans-serif; font-size:13px; color:var(--muted);
+  }
+  select{
+    padding:7px 10px; border:1px solid var(--line); border-radius:4px; font-size:13px;
+    background:var(--card); color:var(--ink);
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+  }
+
+  .legend-row{
+    display:flex; gap:16px; flex-wrap:wrap;
+    font-family: -apple-system, Helvetica, Arial, sans-serif; font-size:11.5px; color:var(--muted);
+    margin-top:8px;
+  }
+  .dot{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; }
+
+  footer{
+    margin-top:26px;
+    font-family: -apple-system, Helvetica, Arial, sans-serif;
+    font-size:12px; color:var(--muted); border-top:1px solid var(--line); padding-top:16px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>SKU-Level Analysis — Apr to Aug</h1>
+    <p>Purchase depth, outlet reach, purchase continuity, sales contribution, and outlet distribution across all 59 SKUs sold in the 5-month period. Values in ₹ Lakh, or ₹ Cr where ≥ 100 Lakh.</p>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="num" id="kpi-outlets">—</div><div class="lbl">Total unique outlets</div></div>
+    <div class="kpi"><div class="num" id="kpi-skus">—</div><div class="lbl">Total SKUs sold</div></div>
+    <div class="kpi"><div class="num" id="kpi-avgdepth">—</div><div class="lbl">Avg. SKUs bought per outlet</div></div>
+    <div class="kpi"><div class="num" id="kpi-meddepth">—</div><div class="lbl">Median SKUs per outlet</div></div>
+  </div>
+
+  <div class="navtabs" id="navtabs"></div>
+
+  <!-- 1. SKU Purchase Depth -->
+  <section id="sec-depth">
+    <div class="card">
+      <h2>1. SKU Purchase Depth</h2>
+      <div class="sub">Distribution of outlets by number of distinct SKUs purchased over Apr–Aug.</div>
+      <canvas id="depthChart"></canvas>
+    </div>
+    <div class="card">
+      <h2>Depth distribution — detail</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>SKUs purchased</th><th class="num">Outlets</th><th class="num">% of total outlets</th></tr></thead>
+          <tbody id="depthtable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Outlet Reach by SKU -->
+  <section id="sec-reach">
+    <div class="card">
+      <h2>2. Outlet Reach by SKU</h2>
+      <div class="sub">Number and % of unique outlets that purchased each SKU at least once. Top 15 shown; full list in the table below.</div>
+      <canvas id="reachChart"></canvas>
+    </div>
+    <div class="card">
+      <div class="searchbox"><input type="text" id="reachSearch" placeholder="Search SKU..." oninput="renderReachTable()"></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>#</th><th>SKU</th><th class="num">Outlet reach</th><th class="num">% of outlets</th></tr></thead>
+          <tbody id="reachtable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. SKU Purchase Continuity -->
+  <section id="sec-continuity">
+    <div class="card">
+      <h2>3. SKU Purchase Continuity</h2>
+      <div class="sub">For each SKU, how many purchasing outlets bought it in all 5 months vs. 4, 3, 2, or just 1 month. Select a SKU to see its full breakdown, or scan the table for all SKUs.</div>
+      <div class="selectorrow">
+        <label for="skuSelect">Focus SKU:</label>
+        <select id="skuSelect" onchange="renderContinuityChart()"></select>
+      </div>
+      <canvas id="continuityChart"></canvas>
+      <div class="legend-row">
+        <span><span class="dot" style="background:#1f6f5c"></span>5 months (fully loyal)</span>
+        <span><span class="dot" style="background:#4f9985"></span>4 months</span>
+        <span><span class="dot" style="background:#c9a63f"></span>3 months</span>
+        <span><span class="dot" style="background:#d98a4f"></span>2 months</span>
+        <span><span class="dot" style="background:#c96a3f"></span>1 month (one-time)</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Continuity — all SKUs</h2>
+      <div class="searchbox"><input type="text" id="contSearch" placeholder="Search SKU..." oninput="renderContinuityTable()"></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>SKU</th><th class="num">Reach</th><th class="num">5M</th><th class="num">4M</th><th class="num">3M</th><th class="num">2M</th><th class="num">1M</th></tr></thead>
+          <tbody id="conttable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. SKU Sales Contribution -->
+  <section id="sec-sales">
+    <div class="card">
+      <h2>4. SKU Sales Contribution</h2>
+      <div class="sub">% contribution of each SKU to total sales of ₹11.43 Cr over Apr–Aug. Top 15 shown; full ranked list below.</div>
+      <canvas id="salesChart"></canvas>
+    </div>
+    <div class="card">
+      <div class="searchbox"><input type="text" id="salesSearch" placeholder="Search SKU..." oninput="renderSalesTable()"></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>#</th><th>SKU</th><th class="num">Sales</th><th class="num">% of total sales</th><th class="num">Cumulative %</th></tr></thead>
+          <tbody id="salestable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. SKU-wise Outlet Distribution -->
+  <section id="sec-dist">
+    <div class="card">
+      <h2>5. SKU-wise Outlet Distribution (by months purchased)</h2>
+      <div class="sub">For the SKU selected below, the split of purchasing outlets across 5M / 4M / 3M / 2M / 1M — shown as counts and as % of that SKU's own reach.</div>
+      <div class="selectorrow">
+        <label for="skuSelect2">SKU:</label>
+        <select id="skuSelect2" onchange="renderDistPanel()"></select>
+      </div>
+      <div class="twocol">
+        <canvas id="distChart"></canvas>
+        <div class="tablewrap" style="max-height:320px;">
+          <table>
+            <thead><tr><th>Months purchased</th><th class="num">Outlets</th><th class="num">% of SKU's outlets</th></tr></thead>
+            <tbody id="disttable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Built from Secondary_Without_Data_Model_Version.xlsb — Data_Dump sheet (341,785 line items, 32,423 unique Outlet IDs, 59 SKUs). Values in ₹ Lakh unless marked Cr (100 Lakh = 1 Cr). "Months purchased" counts distinct months (of Apr, May, Jun, Jul, Aug) in which an outlet placed at least one order for that SKU.</footer>
+</div>
+
+<script>
+const DATA = {"summary": {"total_outlets": 32423, "total_skus": 59, "avg_sku_depth": 6.54, "median_sku_depth": 5.0, "depth_distribution": [{"bucket": "1 SKU", "count": 2886, "pct": 8.9}, {"bucket": "2 SKUs", "count": 3518, "pct": 10.85}, {"bucket": "3 SKUs", "count": 3531, "pct": 10.89}, {"bucket": "4-5 SKUs", "count": 6604, "pct": 20.37}, {"bucket": "6-10 SKUs", "count": 10125, "pct": 31.23}, {"bucket": "11-15 SKUs", "count": 3995, "pct": 12.32}, {"bucket": "16-20 SKUs", "count": 1276, "pct": 3.94}, {"bucket": "21-25 SKUs", "count": 322, "pct": 0.99}, {"bucket": "26-30 SKUs", "count": 144, "pct": 0.44}, {"bucket": "31+ SKUs", "count": 22, "pct": 0.07}]}, "skus": [{"sku": "APBEP8", "outlet_reach": 15363, "reach_pct": 47.38, "sales": 120.094, "sales_pct": 10.5, "m5": 32, "m4": 236, "m3": 982, "m2": 3523, "m1": 10590}, {"sku": "ASDP8M", "outlet_reach": 12568, "reach_pct": 38.76, "sales": 108.113, "sales_pct": 9.46, "m5": 28, "m4": 207, "m3": 842, "m2": 2789, "m1": 8702}, {"sku": "AFRR10", "outlet_reach": 9323, "reach_pct": 28.75, "sales": 85.124, "sales_pct": 7.45, "m5": 13, "m4": 83, "m3": 422, "m2": 1763, "m1": 7042}, {"sku": "COMCAS", "outlet_reach": 8181, "reach_pct": 25.23, "sales": 83.621, "sales_pct": 7.31, "m5": 4, "m4": 70, "m3": 251, "m2": 1276, "m1": 6580}, {"sku": "ASDP50", "outlet_reach": 5218, "reach_pct": 16.09, "sales": 65.291, "sales_pct": 5.71, "m5": 1, "m4": 34, "m3": 151, "m2": 787, "m1": 4245}, {"sku": "AFRB1ML", "outlet_reach": 8625, "reach_pct": 26.6, "sales": 53.63, "sales_pct": 4.69, "m5": 14, "m4": 173, "m3": 740, "m2": 1965, "m1": 5733}, {"sku": "BPRO50", "outlet_reach": 9786, "reach_pct": 30.18, "sales": 52.143, "sales_pct": 4.56, "m5": 9, "m4": 70, "m3": 393, "m2": 1799, "m1": 7515}, {"sku": "DRYXL", "outlet_reach": 7561, "reach_pct": 23.32, "sales": 48.414, "sales_pct": 4.23, "m5": 13, "m4": 88, "m3": 263, "m2": 1085, "m1": 6112}, {"sku": "APBEP27.5ML", "outlet_reach": 8655, "reach_pct": 26.69, "sales": 45.873, "sales_pct": 4.01, "m5": 2, "m4": 74, "m3": 338, "m2": 1547, "m1": 6694}, {"sku": "AFRR5", "outlet_reach": 9754, "reach_pct": 30.08, "sales": 45.475, "sales_pct": 3.98, "m5": 6, "m4": 62, "m3": 361, "m2": 1722, "m1": 7603}, {"sku": "Plaster", "outlet_reach": 4521, "reach_pct": 13.94, "sales": 44.76, "sales_pct": 3.92, "m5": 0, "m4": 6, "m3": 42, "m2": 396, "m1": 4077}, {"sku": "APBEP50ML", "outlet_reach": 6839, "reach_pct": 21.09, "sales": 41.349, "sales_pct": 3.62, "m5": 1, "m4": 23, "m3": 191, "m2": 1108, "m1": 5516}, {"sku": "MSPB24", "outlet_reach": 9544, "reach_pct": 29.44, "sales": 39.787, "sales_pct": 3.48, "m5": 4, "m4": 85, "m3": 382, "m2": 1682, "m1": 7391}, {"sku": "ASDP27.5ML", "outlet_reach": 6049, "reach_pct": 18.66, "sales": 24.175, "sales_pct": 2.11, "m5": 3, "m4": 32, "m3": 162, "m2": 996, "m1": 4856}, {"sku": "AFRB4", "outlet_reach": 3926, "reach_pct": 12.11, "sales": 23.257, "sales_pct": 2.03, "m5": 0, "m4": 13, "m3": 94, "m2": 566, "m1": 3253}, {"sku": "AAB1ML", "outlet_reach": 10180, "reach_pct": 31.4, "sales": 23.218, "sales_pct": 2.03, "m5": 3, "m4": 55, "m3": 436, "m2": 1867, "m1": 7819}, {"sku": "Mens Razor", "outlet_reach": 6305, "reach_pct": 19.45, "sales": 21.022, "sales_pct": 1.84, "m5": 0, "m4": 18, "m3": 106, "m2": 747, "m1": 5434}, {"sku": "INHRJR", "outlet_reach": 5772, "reach_pct": 17.8, "sales": 18.625, "sales_pct": 1.63, "m5": 1, "m4": 11, "m3": 114, "m2": 774, "m1": 4872}, {"sku": "ELAO 200ml", "outlet_reach": 2377, "reach_pct": 7.33, "sales": 17.897, "sales_pct": 1.57, "m5": 1, "m4": 5, "m3": 47, "m2": 265, "m1": 2059}, {"sku": "DECORN", "outlet_reach": 3889, "reach_pct": 11.99, "sales": 16.807, "sales_pct": 1.47, "m5": 1, "m4": 14, "m3": 64, "m2": 539, "m1": 3271}, {"sku": "Womens Razor", "outlet_reach": 6439, "reach_pct": 19.86, "sales": 16.149, "sales_pct": 1.41, "m5": 2, "m4": 22, "m3": 91, "m2": 752, "m1": 5572}, {"sku": "ELAP 200ml", "outlet_reach": 2365, "reach_pct": 7.29, "sales": 15.392, "sales_pct": 1.35, "m5": 2, "m4": 16, "m3": 57, "m2": 304, "m1": 1986}, {"sku": "ORSELP - TETRAPACK", "outlet_reach": 4680, "reach_pct": 14.43, "sales": 14.281, "sales_pct": 1.25, "m5": 0, "m4": 13, "m3": 133, "m2": 748, "m1": 3786}, {"sku": "ORSEPO -TETRAPACK", "outlet_reach": 4533, "reach_pct": 13.98, "sales": 13.496, "sales_pct": 1.18, "m5": 0, "m4": 18, "m3": 104, "m2": 643, "m1": 3768}, {"sku": "DRYXL18s", "outlet_reach": 1989, "reach_pct": 6.13, "sales": 12.464, "sales_pct": 1.09, "m5": 0, "m4": 9, "m3": 44, "m2": 236, "m1": 1700}, {"sku": "AAOPR120Ml", "outlet_reach": 2183, "reach_pct": 6.73, "sales": 10.625, "sales_pct": 0.93, "m5": 0, "m4": 0, "m3": 9, "m2": 123, "m1": 2051}, {"sku": "AFRR2.5", "outlet_reach": 4456, "reach_pct": 13.74, "sales": 9.629, "sales_pct": 0.84, "m5": 0, "m4": 7, "m3": 43, "m2": 502, "m1": 3904}, {"sku": "APBEP4", "outlet_reach": 4386, "reach_pct": 13.53, "sales": 9.179, "sales_pct": 0.8, "m5": 3, "m4": 34, "m3": 90, "m2": 547, "m1": 3712}, {"sku": "MSPB50", "outlet_reach": 1722, "reach_pct": 5.31, "sales": 7.496, "sales_pct": 0.66, "m5": 0, "m4": 7, "m3": 36, "m2": 169, "m1": 1510}, {"sku": "SLIM FIT NIGHT PADS", "outlet_reach": 2663, "reach_pct": 8.21, "sales": 7.322, "sales_pct": 0.64, "m5": 0, "m4": 5, "m3": 21, "m2": 175, "m1": 2462}, {"sku": "RELMNT", "outlet_reach": 3519, "reach_pct": 10.85, "sales": 5.869, "sales_pct": 0.51, "m5": 0, "m4": 8, "m3": 56, "m2": 337, "m1": 3118}, {"sku": "ULTR SLIM FIT", "outlet_reach": 1828, "reach_pct": 5.64, "sales": 4.585, "sales_pct": 0.4, "m5": 0, "m4": 13, "m3": 56, "m2": 185, "m1": 1574}, {"sku": "RELF30", "outlet_reach": 46, "reach_pct": 0.14, "sales": 4.345, "sales_pct": 0.38, "m5": 0, "m4": 0, "m3": 0, "m2": 0, "m1": 46}, {"sku": "JMS30G", "outlet_reach": 1554, "reach_pct": 4.79, "sales": 3.968, "sales_pct": 0.35, "m5": 0, "m4": 0, "m3": 9, "m2": 80, "m1": 1465}, {"sku": "RELIEF COUGH & COLD (ASSORTED) POUCH PACK", "outlet_reach": 2038, "reach_pct": 6.29, "sales": 3.628, "sales_pct": 0.32, "m5": 0, "m4": 3, "m3": 17, "m2": 162, "m1": 1856}, {"sku": "MSPB27.5", "outlet_reach": 1419, "reach_pct": 4.38, "sales": 3.556, "sales_pct": 0.31, "m5": 0, "m4": 0, "m3": 5, "m2": 80, "m1": 1334}, {"sku": "COMF 18s", "outlet_reach": 977, "reach_pct": 3.01, "sales": 3.291, "sales_pct": 0.29, "m5": 0, "m4": 2, "m3": 13, "m2": 67, "m1": 895}, {"sku": "ORS POWDER - ORANGE", "outlet_reach": 2284, "reach_pct": 7.04, "sales": 2.94, "sales_pct": 0.26, "m5": 0, "m4": 10, "m3": 73, "m2": 331, "m1": 1870}, {"sku": "ARCS8M", "outlet_reach": 2569, "reach_pct": 7.92, "sales": 2.186, "sales_pct": 0.19, "m5": 0, "m4": 0, "m3": 19, "m2": 223, "m1": 2327}, {"sku": "ACWRSS 1PS", "outlet_reach": 880, "reach_pct": 2.71, "sales": 2.04, "sales_pct": 0.18, "m5": 0, "m4": 0, "m3": 5, "m2": 41, "m1": 834}, {"sku": "AJPRG 30G", "outlet_reach": 395, "reach_pct": 1.22, "sales": 1.711, "sales_pct": 0.15, "m5": 0, "m4": 0, "m3": 1, "m2": 8, "m1": 386}, {"sku": "ORSEPO", "outlet_reach": 212, "reach_pct": 0.65, "sales": 1.551, "sales_pct": 0.14, "m5": 0, "m4": 0, "m3": 0, "m2": 10, "m1": 202}, {"sku": "RELF5", "outlet_reach": 1552, "reach_pct": 4.79, "sales": 1.337, "sales_pct": 0.12, "m5": 2, "m4": 11, "m3": 39, "m2": 169, "m1": 1331}, {"sku": "AJFPRS 50G", "outlet_reach": 222, "reach_pct": 0.68, "sales": 1.261, "sales_pct": 0.11, "m5": 0, "m4": 0, "m3": 1, "m2": 5, "m1": 216}, {"sku": "ACWRSS 4PS", "outlet_reach": 322, "reach_pct": 0.99, "sales": 1.134, "sales_pct": 0.1, "m5": 0, "m4": 0, "m3": 0, "m2": 11, "m1": 311}, {"sku": "ORSELP", "outlet_reach": 234, "reach_pct": 0.72, "sales": 1.072, "sales_pct": 0.09, "m5": 0, "m4": 0, "m3": 0, "m2": 21, "m1": 213}, {"sku": "ARCCHD", "outlet_reach": 962, "reach_pct": 2.97, "sales": 0.983, "sales_pct": 0.09, "m5": 0, "m4": 8, "m3": 37, "m2": 131, "m1": 786}, {"sku": "COMPPRR 50ML", "outlet_reach": 96, "reach_pct": 0.3, "sales": 0.784, "sales_pct": 0.07, "m5": 0, "m4": 0, "m3": 0, "m2": 0, "m1": 96}, {"sku": "M150ML", "outlet_reach": 397, "reach_pct": 1.22, "sales": 0.771, "sales_pct": 0.07, "m5": 1, "m4": 1, "m3": 3, "m2": 33, "m1": 359}, {"sku": "Nasal Spray 10Ml", "outlet_reach": 165, "reach_pct": 0.51, "sales": 0.404, "sales_pct": 0.04, "m5": 0, "m4": 0, "m3": 0, "m2": 21, "m1": 144}, {"sku": "JMS80G", "outlet_reach": 122, "reach_pct": 0.38, "sales": 0.348, "sales_pct": 0.03, "m5": 0, "m4": 0, "m3": 0, "m2": 2, "m1": 120}, {"sku": "Relief Assorted Jar", "outlet_reach": 88, "reach_pct": 0.27, "sales": 0.218, "sales_pct": 0.02, "m5": 0, "m4": 0, "m3": 0, "m2": 0, "m1": 88}, {"sku": "ADPG10", "outlet_reach": 142, "reach_pct": 0.44, "sales": 0.181, "sales_pct": 0.02, "m5": 0, "m4": 0, "m3": 0, "m2": 1, "m1": 141}, {"sku": "A150Ml", "outlet_reach": 55, "reach_pct": 0.17, "sales": 0.162, "sales_pct": 0.01, "m5": 0, "m4": 1, "m3": 1, "m2": 5, "m1": 48}, {"sku": "M500ML", "outlet_reach": 27, "reach_pct": 0.08, "sales": 0.094, "sales_pct": 0.01, "m5": 0, "m4": 0, "m3": 0, "m2": 3, "m1": 24}, {"sku": "ORSEPO 160 ML", "outlet_reach": 11, "reach_pct": 0.03, "sales": 0.054, "sales_pct": 0.0, "m5": 0, "m4": 0, "m3": 0, "m2": 0, "m1": 11}, {"sku": "ORSELP 160 ML", "outlet_reach": 3, "reach_pct": 0.01, "sales": 0.019, "sales_pct": 0.0, "m5": 0, "m4": 0, "m3": 0, "m2": 0, "m1": 3}, {"sku": "ORSELM", "outlet_reach": 11, "reach_pct": 0.03, "sales": 0.004, "sales_pct": 0.0, "m5": 0, "m4": 0, "m3": 0, "m2": 0, "m1": 11}, {"sku": "180M24", "outlet_reach": 1, "reach_pct": 0.0, "sales": 0.003, "sales_pct": 0.0, "m5": 0, "m4": 0, "m3": 0, "m2": 0, "m1": 1}]};
+
+function fmtVal(n){
+  if(Math.abs(n) >= 100){ return (n/100).toLocaleString('en-IN', {maximumFractionDigits:2}) + ' Cr'; }
+  return n.toLocaleString('en-IN', {maximumFractionDigits:2}) + ' L';
+}
+const fmtInt = n => n.toLocaleString('en-IN');
+
+const SKUS_BY_SALES = [...DATA.skus].sort((a,b)=>b.sales-a.sales);
+const SKUS_BY_REACH = [...DATA.skus].sort((a,b)=>b.outlet_reach-a.outlet_reach);
+
+// ---------- KPIs ----------
+document.getElementById('kpi-outlets').textContent = fmtInt(DATA.summary.total_outlets);
+document.getElementById('kpi-skus').textContent = DATA.summary.total_skus;
+document.getElementById('kpi-avgdepth').textContent = DATA.summary.avg_sku_depth;
+document.getElementById('kpi-meddepth').textContent = DATA.summary.median_sku_depth;
+
+// ---------- Nav ----------
+const SECTIONS = [
+  {id:'sec-depth', label:'1. SKU Purchase Depth'},
+  {id:'sec-reach', label:'2. Outlet Reach by SKU'},
+  {id:'sec-continuity', label:'3. Purchase Continuity'},
+  {id:'sec-sales', label:'4. Sales Contribution'},
+  {id:'sec-dist', label:'5. Outlet Distribution'},
+];
+const navtabs = document.getElementById('navtabs');
+SECTIONS.forEach((s,i)=>{
+  const btn = document.createElement('button');
+  btn.textContent = s.label;
+  if(i===0) btn.classList.add('active');
+  btn.onclick = () => {
+    document.querySelectorAll('.navtabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('section').forEach(sec=>sec.classList.remove('active'));
+    document.getElementById(s.id).classList.add('active');
+  };
+  navtabs.appendChild(btn);
+});
+document.getElementById('sec-depth').classList.add('active');
+
+// ---------- 1. Depth ----------
+let depthChart = new Chart(document.getElementById('depthChart'), {
+  type:'bar',
+  data:{
+    labels: DATA.summary.depth_distribution.map(d=>d.bucket),
+    datasets:[{ label:'Outlets', data: DATA.summary.depth_distribution.map(d=>d.count), backgroundColor:'#1f6f5c', borderRadius:3 }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => `${fmtInt(c.raw)} outlets (${DATA.summary.depth_distribution[c.dataIndex].pct.toFixed(1)}%)` } } },
+    scales:{ x:{grid:{display:false}, ticks:{font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11}}}, y:{ grid:{color:'#e3e8e6'}, ticks:{font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11}} } }
+  }
+});
+document.getElementById('depthtable').innerHTML = DATA.summary.depth_distribution.map(d=>`
+  <tr><td>${d.bucket}</td><td class="num">${fmtInt(d.count)}</td><td class="num">${d.pct.toFixed(2)}%</td></tr>
+`).join('');
+
+// ---------- 2. Reach ----------
+const reachTop15 = SKUS_BY_REACH.slice(0,15);
+let reachChart = new Chart(document.getElementById('reachChart'), {
+  type:'bar',
+  data:{
+    labels: reachTop15.map(d=>d.sku),
+    datasets:[{ label:'Outlet reach', data: reachTop15.map(d=>d.outlet_reach), backgroundColor:'#c96a3f', borderRadius:3 }]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => `${fmtInt(c.raw)} outlets (${reachTop15[c.dataIndex].reach_pct.toFixed(1)}% of all outlets)` } } },
+    scales:{ x:{ grid:{color:'#e3e8e6'}, ticks:{font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11}} }, y:{ grid:{display:false}, ticks:{font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11}} } }
+  }
+});
+function renderReachTable(){
+  const q = document.getElementById('reachSearch').value.toLowerCase();
+  const rows = SKUS_BY_REACH.filter(d=>d.sku.toLowerCase().includes(q));
+  document.getElementById('reachtable').innerHTML = rows.map((d,i)=>`
+    <tr><td class="rank">${i+1}</td><td class="name">${d.sku}</td><td class="num">${fmtInt(d.outlet_reach)}</td><td class="num">${d.reach_pct.toFixed(2)}%</td></tr>
+  `).join('');
+}
+renderReachTable();
+
+// ---------- 3. Continuity ----------
+const skuSelect = document.getElementById('skuSelect');
+SKUS_BY_SALES.forEach(d=>{
+  const opt = document.createElement('option');
+  opt.value = d.sku; opt.textContent = d.sku;
+  skuSelect.appendChild(opt);
+});
+let continuityChart = null;
+function renderContinuityChart(){
+  const sku = skuSelect.value || SKUS_BY_SALES[0].sku;
+  const d = DATA.skus.find(x=>x.sku===sku);
+  if(continuityChart) continuityChart.destroy();
+  continuityChart = new Chart(document.getElementById('continuityChart'), {
+    type:'bar',
+    data:{
+      labels:['5 Months','4 Months','3 Months','2 Months','1 Month'],
+      datasets:[{
+        data:[d.m5,d.m4,d.m3,d.m2,d.m1],
+        backgroundColor:['#1f6f5c','#4f9985','#c9a63f','#d98a4f','#c96a3f'],
+        borderRadius:3
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => `${fmtInt(c.raw)} outlets (${(c.raw/d.outlet_reach*100).toFixed(1)}% of ${d.sku}'s buyers)` } } },
+      scales:{ x:{grid:{display:false}, ticks:{font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11}}}, y:{ grid:{color:'#e3e8e6'}, ticks:{font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11}} } }
+    }
+  });
+}
+skuSelect.value = SKUS_BY_SALES[0].sku;
+renderContinuityChart();
+
+function renderContinuityTable(){
+  const q = document.getElementById('contSearch').value.toLowerCase();
+  const rows = SKUS_BY_SALES.filter(d=>d.sku.toLowerCase().includes(q));
+  document.getElementById('conttable').innerHTML = rows.map(d=>`
+    <tr>
+      <td class="name">${d.sku}</td>
+      <td class="num">${fmtInt(d.outlet_reach)}</td>
+      <td class="num">${fmtInt(d.m5)}</td>
+      <td class="num">${fmtInt(d.m4)}</td>
+      <td class="num">${fmtInt(d.m3)}</td>
+      <td class="num">${fmtInt(d.m2)}</td>
+      <td class="num">${fmtInt(d.m1)}</td>
+    </tr>
+  `).join('');
+}
+renderContinuityTable();
+
+// ---------- 4. Sales Contribution ----------
+const salesTop15 = SKUS_BY_SALES.slice(0,15);
+let salesChart = new Chart(document.getElementById('salesChart'), {
+  type:'bar',
+  data:{
+    labels: salesTop15.map(d=>d.sku),
+    datasets:[{ label:'Sales %', data: salesTop15.map(d=>d.sales_pct), backgroundColor:'#8a6bb0', borderRadius:3 }]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c => `${c.raw.toFixed(2)}% of total sales (${fmtVal(salesTop15[c.dataIndex].sales)})` } } },
+    scales:{ x:{ grid:{color:'#e3e8e6'}, ticks:{ callback:v=>v+'%', font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11}} }, y:{ grid:{display:false}, ticks:{font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11}} } }
+  }
+});
+function renderSalesTable(){
+  const q = document.getElementById('salesSearch').value.toLowerCase();
+  const rows = SKUS_BY_SALES.filter(d=>d.sku.toLowerCase().includes(q));
+  let cum = 0;
+  const cumMap = {};
+  SKUS_BY_SALES.forEach(d=>{ cum += d.sales_pct; cumMap[d.sku] = cum; });
+  document.getElementById('salestable').innerHTML = rows.map((d,i)=>`
+    <tr><td class="rank">${SKUS_BY_SALES.indexOf(d)+1}</td><td class="name">${d.sku}</td><td class="num">${fmtVal(d.sales)}</td><td class="num">${d.sales_pct.toFixed(2)}%</td><td class="num">${cumMap[d.sku].toFixed(2)}%</td></tr>
+  `).join('');
+}
+renderSalesTable();
+
+// ---------- 5. Distribution by SKU ----------
+const skuSelect2 = document.getElementById('skuSelect2');
+SKUS_BY_SALES.forEach(d=>{
+  const opt = document.createElement('option');
+  opt.value = d.sku; opt.textContent = d.sku;
+  skuSelect2.appendChild(opt);
+});
+let distChart = null;
+function renderDistPanel(){
+  const sku = skuSelect2.value || SKUS_BY_SALES[0].sku;
+  const d = DATA.skus.find(x=>x.sku===sku);
+  const labels = ['5 Months','4 Months','3 Months','2 Months','1 Month'];
+  const vals = [d.m5,d.m4,d.m3,d.m2,d.m1];
+  const colors = ['#1f6f5c','#4f9985','#c9a63f','#d98a4f','#c96a3f'];
+
+  if(distChart) distChart.destroy();
+  distChart = new Chart(document.getElementById('distChart'), {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data: vals, backgroundColor: colors }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ position:'bottom', labels:{ font:{family:'-apple-system, Helvetica, Arial, sans-serif', size:11} } },
+        tooltip:{ callbacks:{ label: c => `${c.label}: ${fmtInt(c.raw)} outlets (${(c.raw/d.outlet_reach*100).toFixed(1)}%)` } }
+      }
+    }
+  });
+
+  document.getElementById('disttable').innerHTML = labels.map((l,i)=>`
+    <tr><td>${l}</td><td class="num">${fmtInt(vals[i])}</td><td class="num">${(vals[i]/d.outlet_reach*100).toFixed(2)}%</td></tr>
+  `).join('') + `<tr style="font-weight:700;"><td>Total reach</td><td class="num">${fmtInt(d.outlet_reach)}</td><td class="num">100.00%</td></tr>`;
+}
+skuSelect2.value = SKUS_BY_SALES[0].sku;
+renderDistPanel();
+</script>
+</body>
+</html>
